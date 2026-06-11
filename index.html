@@ -538,12 +538,21 @@
       <div class="section-label">Open Source</div>
 
       <div class="oss-item">
-        <div class="oss-dot active"></div>
+        <div class="oss-dot"></div>
         <div class="oss-body">
-          <div class="oss-name">Bridger <span class="badge">Active</span></div>
+          <div class="oss-name">Bridger</div>
           <div class="oss-desc">Open-source social media platform — actively building &amp; contributing.</div>
         </div>
         <div class="oss-role">Contributor</div>
+      </div>
+
+      <div class="oss-item">
+        <div class="oss-dot active"></div>
+        <div class="oss-body">
+          <div class="oss-name">StudyHive</div>
+          <div class="oss-desc">Discord server owner &amp; bot creator. Manages 50+ students — built the community and the tooling around it.</div>
+        </div>
+        <div class="oss-role">Owner</div>
       </div>
 
       <div class="oss-item">
@@ -578,8 +587,8 @@
         <div class="ach-meta gold">★ 2× Winner</div>
       </div>
       <div class="ach-row">
-        <div class="ach-name">Intl Astronomy &amp; Science Olympiad</div>
-        <div class="ach-meta green">R1 Qualifier</div>
+        <div class="ach-name">Intl Astronomy &amp; Astrophysics Competition</div>
+        <div class="ach-meta green">R1 Winner · R2 Qualifier</div>
       </div>
       <div class="ach-row">
         <div class="ach-name">High School GPA</div>
@@ -588,10 +597,6 @@
       <div class="ach-row">
         <div class="ach-name">Coding Since Age 9</div>
         <div class="ach-meta" style="color:var(--dim)">Self-Taught</div>
-      </div>
-      <div class="ach-row">
-        <div class="ach-name">Praised by Teachers &amp; Professors</div>
-        <div class="ach-meta" style="color:var(--dim)">Computer Knowledge</div>
       </div>
     </section>
 
@@ -703,6 +708,68 @@ setTimeout(() => document.getElementById('tvShell').classList.remove('booting'),
     setTimeout(tick, 900 + Math.random() * 3500);
   }
   tick();
+})();
+</script>
+
+<!-- ── PREFETCH (adapted from kaisermann.me) ── -->
+<script>
+(function(){
+  const prefetched = new Set();
+
+  function canPrefetch(href) {
+    if (!navigator.onLine) return false;
+    if ('connection' in navigator) {
+      const c = navigator.connection;
+      if (c.saveData || /2g/.test(c.effectiveType)) return false;
+    }
+    try {
+      const u = new URL(href, location.href);
+      return u.origin === location.origin && u.pathname !== location.pathname && !prefetched.has(href);
+    } catch { return false; }
+  }
+
+  function prefetch(href) {
+    href = href.replace(/#.*/, '');
+    if (!canPrefetch(href)) return;
+    prefetched.add(href);
+    const link = document.createElement('link');
+    if (link.relList?.supports?.('prefetch')) {
+      link.rel = 'prefetch';
+      link.href = href;
+      document.head.append(link);
+    } else {
+      fetch(href, { priority: 'low' });
+    }
+  }
+
+  // Tap / touchstart — immediate prefetch
+  for (const ev of ['touchstart', 'mousedown']) {
+    document.body.addEventListener(ev, e => {
+      const a = e.target?.closest('a');
+      if (a?.href) prefetch(a.href);
+    }, { passive: true });
+  }
+
+  // Hover with 80 ms delay (matches kaisermann)
+  let hoverTimer;
+  document.body.addEventListener('mouseover', e => {
+    const a = e.target?.closest('a');
+    if (!a?.href) return;
+    hoverTimer = setTimeout(() => prefetch(a.href), 80);
+  }, { passive: true });
+  document.body.addEventListener('mouseout', () => {
+    clearTimeout(hoverTimer);
+  }, { passive: true });
+
+  // Viewport — prefetch links as they scroll into view
+  const io = new IntersectionObserver(entries => {
+    for (const en of entries) {
+      if (en.isIntersecting) {
+        setTimeout(() => { prefetch(en.target.href); io.unobserve(en.target); }, 300);
+      }
+    }
+  });
+  document.querySelectorAll('a[href]').forEach(a => io.observe(a));
 })();
 </script>
 </body>
