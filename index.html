@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Ahilan — ECE + CS, hacktivist, coder since 9, open-source contributor.">
+<title>ahilan</title>
+<style>
+  /* ── RESET ── */
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  img { max-width: 100%; display: block; }
+
+  /* ── TOKENS ── */
+  :root {
+    --bg:       #000;
+    --fg:       #e8e8e8;
+    --accent:   #5865f2;
+    --accent2:  #7289da;
+    --dim:      #555;
+    --dimmer:   #2a2a2a;
+    --green:    #57f287;
+    --yellow:   #fee75c;
+    --red:      #ed4245;
+    --glitch-b: rgba(2,183,182,.45);
+    --glitch-r: rgba(183,2,2,.45);
+    --mono:     'Courier New', Courier, monospace;
+    --fs:       clamp(14px, 1.5vw, 16px);
+  }
+
+  /* ── BASE ── */
+  html {
+    font-family: var(--mono);
+    font-size: var(--fs);
+    color: var(--fg);
+    background: var(--bg);
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--bg);
+    overflow-x: hidden;
+    min-height: 100%;
+  }
+
+  /* ══════════════════════════════════════════
+     TV SHELL — wraps everything, handles turn-on
+  ══════════════════════════════════════════ */
+  .tv-shell {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+  }
+
+  /* ── TURN-ON ANIMATION (fires once on load) ── */
+  @keyframes turn-on-transform {
+    0%   { transform: scaleY(.006) skew(2deg); filter: brightness(30) invert(1); }
+    8%   { transform: scaleY(.8) skew(1deg);   filter: brightness(6)  invert(1); }
+    25%  { transform: scaleY(1.02) skew(-1deg);filter: brightness(3)  invert(0); }
+    50%  { transform: scaleY(.98) skew(.5deg); filter: brightness(2); }
+    70%  { transform: scaleY(1) skew(0deg);    filter: brightness(1.3); }
+    100% { transform: scaleY(1) skew(0deg);    filter: brightness(1); }
+  }
+
+  .tv-shell.booting {
+    animation: turn-on-transform .8s cubic-bezier(.22,.61,.36,1) both;
+    transform-origin: center center;
+  }
+
+  /* ── CRT SCAN LINE (moving bright band) ── */
+  @keyframes vline {
+    0%   { transform: translateY(-8%); }
+    100% { transform: translateY(108%); }
+  }
+
+  .crt-vline {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 80px;
+    background: linear-gradient(180deg, transparent 0, rgba(255,255,255,.06) 50%, transparent 100%);
+    pointer-events: none;
+    z-index: 900;
+    animation: vline 9s linear infinite;
+  }
+
+  /* ── HORIZONTAL SCANLINES ── */
+  .crt-scanlines {
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(0,0,0,.13) 3px,
+      rgba(0,0,0,.13) 4px
+    );
+    pointer-events: none;
+    z-index: 901;
+  }
+
+  /* ── VIGNETTE ── */
+  .crt-vignette {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.75) 100%);
+    pointer-events: none;
+    z-index: 902;
+  }
+
+  /* ── STATIC NOISE (CSS-only, no image needed) ── */
+  .crt-noise {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 903;
+    opacity: .04;
+    /* animated SVG turbulence as background */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    animation: noise-shift 0.12s steps(1) infinite;
+  }
+
+  @keyframes noise-shift {
+    0%   { background-position:   0   0; }
+    10%  { background-position: -15px -20px; }
+    20%  { background-position:  30px  10px; }
+    30%  { background-position: -10px  25px; }
+    40%  { background-position:  20px -15px; }
+    50%  { background-position: -25px  5px; }
+    60%  { background-position:  10px  30px; }
+    70%  { background-position: -5px  -10px; }
+    80%  { background-position:  25px  20px; }
+    90%  { background-position: -20px  15px; }
+    100% { background-position:   5px -25px; }
+  }
+
+  /* ── GLITCH ARTIFACTS ── */
+  @keyframes artifacts {
+    0%,95%,100% { opacity: 0; clip-path: inset(100% 0 0 0); }
+    96% { opacity: .5; clip-path: inset(20% 0 65% 0); transform: translateX(3px); }
+    97% { opacity: .4; clip-path: inset(55% 0 30% 0); transform: translateX(-4px); }
+    98% { opacity: .3; clip-path: inset(80% 0 5%  0); transform: translateX(2px); }
+    99% { opacity: .2; clip-path: inset(10% 0 80% 0); transform: translateX(-1px); }
+  }
+
+  .crt-artifacts {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 904;
+    background: linear-gradient(180deg, var(--glitch-b) 0%, var(--glitch-r) 100%);
+    animation: artifacts 6s steps(1) infinite;
+    opacity: 0;
+  }
+
+  /* ══════════════════════════════════════════
+     PAGE CONTENT
+  ══════════════════════════════════════════ */
+  .page {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 48px 28px 100px;
+    position: relative;
+    z-index: 10;
+    line-height: 1.7;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 80px;
+    font-size: 11px;
+    letter-spacing: .08em;
+    color: var(--dim);
+    text-transform: uppercase;
+    user-select: none;
+  }
+
+  .topbar-logo {
+    color: var(--fg);
+    font-size: 13px;
+    letter-spacing: .12em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .topbar-logo::after {
+    content: '▶';
+    font-size: 8px;
+    color: var(--accent);
+    animation: blink-sym 2s step-end infinite;
+  }
+
+  @keyframes blink-sym {
+    0%,100% { opacity:1; } 50% { opacity:0; }
+  }
+
+  .topbar-nav { display: flex; flex-direction: column; gap: 3px; }
+
+  .topbar-nav a {
+    color: var(--dim);
+    text-decoration: none;
+    font-size: 11px;
+    letter-spacing: .08em;
+    transition: color .15s;
+  }
+
+  .topbar-nav a:hover { color: var(--fg); }
+
+  .topbar-right { text-align: right; line-height: 1.8; }
+
+  .channel-ctrl {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--dim);
+  }
+
+  .channel-ctrl b { color: var(--fg); font-weight: normal; }
+
+  /* ── HERO ── */
+  .hero { margin-bottom: 56px; }
+
+  .hero-text {
+    font-size: clamp(19px, 3.2vw, 27px);
+    line-height: 1.5;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    font-weight: normal;
+  }
+
+  .name {
+    color: var(--accent2);
+    position: relative;
+    display: inline-block;
+    text-shadow: 2px 1px 0 var(--glitch-b), -2px -1px 0 var(--glitch-r);
+  }
+
+  .name:hover { animation: glitch-name .35s steps(2) forwards; }
+
+  @keyframes glitch-name {
+    0%   { text-shadow: 3px 2px 0 var(--glitch-b), -3px -2px 0 var(--glitch-r); transform: translate(0); }
+    20%  { text-shadow: -4px 1px 0 var(--glitch-b), 4px -1px 0 var(--glitch-r); transform: translate(3px); clip-path: inset(30% 0 40% 0); }
+    40%  { text-shadow: 4px -2px 0 var(--glitch-b), -4px 2px 0 var(--glitch-r); transform: translate(-3px); clip-path: inset(60% 0 10% 0); }
+    60%  { text-shadow: -3px 3px 0 var(--glitch-b), 3px -3px 0 var(--glitch-r); transform: translate(2px); }
+    80%  { text-shadow: 2px 1px 0 var(--glitch-b), -2px -1px 0 var(--glitch-r); transform: translate(0); clip-path: none; }
+    100% { text-shadow: 2px 1px 0 var(--glitch-b), -2px -1px 0 var(--glitch-r); transform: translate(0); clip-path: none; }
+  }
+
+  .hi { color: var(--accent2); }
+
+  /* ── BIO ── */
+  .bio {
+    margin-bottom: 48px;
+    color: #c4c4c4;
+    font-size: 14px;
+    line-height: 1.95;
+  }
+
+  .bio p { margin-bottom: 18px; }
+  .bio p:last-child { margin-bottom: 0; }
+
+  .bio a {
+    color: var(--fg);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: #333;
+    transition: text-decoration-color .15s;
+  }
+
+  .bio a:hover { text-decoration-color: var(--accent2); }
+
+  /* ── DIVIDER ── */
+  .glitch-line {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(88,101,242,.25), transparent);
+    margin: 52px 0;
+    position: relative;
+    overflow: visible;
+  }
+
+  .glitch-line::before {
+    content: '';
+    position: absolute;
+    left: 0; top: -2px;
+    height: 5px;
+    width: 20%;
+    background: var(--accent);
+    opacity: 0;
+    animation: sweep 7s steps(1) infinite;
+  }
+
+  @keyframes sweep {
+    0%,88%,100% { opacity:0; width:15%; transform: translateX(-100%); }
+    90% { opacity:.35; width:25%; transform: translateX(0); }
+    93% { opacity:.2;  width:40%; transform: translateX(80%); }
+    95% { opacity:.15; width:20%; transform: translateX(140%); }
+    97% { opacity:0;   transform: translateX(200%); }
+  }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-size: 10px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 20px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--dimmer);
+  }
+
+  /* ── OSS ── */
+  .oss-section { margin-bottom: 52px; }
+
+  .oss-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--dimmer);
+    transition: background .15s;
+  }
+
+  .oss-item:first-of-type { border-top: 1px solid var(--dimmer); }
+  .oss-item:hover { background: rgba(88,101,242,.04); }
+
+  .oss-dot {
+    width: 6px; height: 6px;
+    background: var(--dim);
+    flex-shrink: 0;
+    margin-top: 6px;
+    position: relative;
+  }
+
+  .oss-dot.active { background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+  .oss-dot.active::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border: 1px solid var(--green);
+    opacity: .4;
+    animation: ping 2s ease-out infinite;
+  }
+
+  @keyframes ping {
+    0%   { transform: scale(1); opacity: .4; }
+    100% { transform: scale(2.8); opacity: 0; }
+  }
+
+  .oss-body { flex: 1; }
+
+  .oss-name {
+    font-size: 13px;
+    letter-spacing: .05em;
+    color: var(--fg);
+    text-transform: uppercase;
+  }
+
+  .oss-desc {
+    font-size: 12px;
+    color: var(--dim);
+    margin-top: 3px;
+    line-height: 1.6;
+  }
+
+  .oss-role {
+    font-size: 11px;
+    color: var(--dim);
+    white-space: nowrap;
+    padding-top: 2px;
+  }
+
+  .badge {
+    font-size: 9px;
+    letter-spacing: .1em;
+    color: var(--green);
+    border: 1px solid var(--green);
+    padding: 1px 5px;
+    text-transform: uppercase;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  /* ── ACHIEVEMENTS ── */
+  .ach-section { margin-bottom: 52px; }
+
+  .ach-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--dimmer);
+    gap: 16px;
+  }
+
+  .ach-row:first-of-type { border-top: 1px solid var(--dimmer); }
+
+  .ach-name {
+    font-size: 12px;
+    color: var(--fg);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    flex: 1;
+    line-height: 1.5;
+  }
+
+  .ach-meta {
+    font-size: 11px;
+    color: var(--dim);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .gold  { color: var(--yellow); }
+  .green { color: var(--green); }
+
+  /* ── CURSOR BLINK ── */
+  .cur {
+    display: inline-block;
+    width: 9px; height: 1em;
+    background: var(--fg);
+    vertical-align: text-bottom;
+    margin-left: 2px;
+    animation: blink-sym 1s step-end infinite;
+  }
+
+  /* ── FOOTER / LINKS ── */
+  .links-row {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    padding-top: 32px;
+    border-top: 1px solid var(--dimmer);
+  }
+
+  .links-row a {
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--dim);
+    text-decoration: none;
+    transition: color .15s;
+  }
+
+  .links-row a::after { content: ' ↗'; opacity: .5; }
+  .links-row a:hover  { color: var(--fg); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 520px) {
+    .topbar { flex-direction: column; gap: 20px; margin-bottom: 52px; }
+    .topbar-right { text-align: left; }
+    .hero-text { font-size: 18px; }
+    .oss-role { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; }
+    .tv-shell.booting { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ CRT EFFECTS LAYER ══ -->
+<div class="crt-vline"    aria-hidden="true"></div>
+<div class="crt-scanlines" aria-hidden="true"></div>
+<div class="crt-vignette"  aria-hidden="true"></div>
+<div class="crt-noise"     aria-hidden="true"></div>
+<div class="crt-artifacts" aria-hidden="true"></div>
+
+<!-- ══ TV SHELL (turn-on animation target) ══ -->
+<div class="tv-shell booting" id="tvShell">
+
+  <div class="page">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div>
+        <div class="topbar-logo">AH</div>
+        <nav class="topbar-nav">
+          <a href="#oss">open-source</a>
+          <a href="#achievements">achievements</a>
+        </nav>
+      </div>
+      <div class="topbar-right">
+        <div id="date-out" style="margin-bottom:4px;"></div>
+        <div class="channel-ctrl">
+          <span style="opacity:.35">◀</span>
+          CHANNEL <b>00</b>
+          <span style="opacity:.35">▶</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero">
+      <p class="hero-text">
+        Hi! I'm <span class="name">Ahilan</span>, an
+        <span class="hi">ECE&nbsp;+&nbsp;CS</span> student,
+        hacktivist&nbsp;and avid&nbsp;open-sourcerer.
+      </p>
+    </section>
+
+    <!-- BIO -->
+    <div class="bio">
+      <p>
+        I've been coding since I was 9 — self-taught, curiosity-driven, and still going.
+        I run <a href="https://archlinux.org" target="_blank" rel="noopener">Arch&nbsp;Linux</a>
+        by choice, care deeply about open-source, and believe the best way to learn
+        security is to break things ethically.
+        Highly praised for computer knowledge and intelligence by teachers and professors.
+      </p>
+      <p>
+        Right now I'm actively building and contributing to
+        <a href="https://github.com/Ahilan-1" target="_blank" rel="noopener">Bridger</a>
+        — an open-source social media platform — while sharpening my competitive
+        programming skills in C++.
+      </p>
+      <p>
+        Passionate about <a href="https://github.com/Ahilan-1" target="_blank" rel="noopener">open-source</a>,
+        security research, and astronomy.
+        International Astronomy &amp; Science Olympiad qualifier.
+        Building things that don't need frameworks to be fast.<span class="cur"></span>
+      </p>
+    </div>
+
+    <div class="glitch-line"></div>
+
+    <!-- OPEN SOURCE -->
+    <section class="oss-section" id="oss">
+      <div class="section-label">Open Source</div>
+
+      <div class="oss-item">
+        <div class="oss-dot active"></div>
+        <div class="oss-body">
+          <div class="oss-name">Bridger <span class="badge">Active</span></div>
+          <div class="oss-desc">Open-source social media platform — actively building &amp; contributing.</div>
+        </div>
+        <div class="oss-role">Contributor</div>
+      </div>
+
+      <div class="oss-item">
+        <div class="oss-dot"></div>
+        <div class="oss-body">
+          <div class="oss-name">Search Engine</div>
+          <div class="oss-desc">Google alternative built from scratch. 1st place — regional innovation.</div>
+        </div>
+        <div class="oss-role">Author</div>
+      </div>
+
+      <div class="oss-item">
+        <div class="oss-dot"></div>
+        <div class="oss-body">
+          <div class="oss-name">Security Research</div>
+          <div class="oss-desc">Ethical hacking, CTF challenges, pen-testing as a hobby.</div>
+        </div>
+        <div class="oss-role">Ongoing</div>
+      </div>
+    </section>
+
+    <!-- ACHIEVEMENTS -->
+    <section class="ach-section" id="achievements">
+      <div class="section-label">Achievements</div>
+
+      <div class="ach-row">
+        <div class="ach-name">Regional Innovation — 1st Place</div>
+        <div class="ach-meta gold">★ Winner</div>
+      </div>
+      <div class="ach-row">
+        <div class="ach-name">High School Hackathon Champion</div>
+        <div class="ach-meta gold">★ 2× Winner</div>
+      </div>
+      <div class="ach-row">
+        <div class="ach-name">Intl Astronomy &amp; Science Olympiad</div>
+        <div class="ach-meta green">R1 Qualifier</div>
+      </div>
+      <div class="ach-row">
+        <div class="ach-name">High School GPA</div>
+        <div class="ach-meta green">4.1 / 5.0 · First Class</div>
+      </div>
+      <div class="ach-row">
+        <div class="ach-name">Coding Since Age 9</div>
+        <div class="ach-meta" style="color:var(--dim)">Self-Taught</div>
+      </div>
+      <div class="ach-row">
+        <div class="ach-name">Praised by Teachers &amp; Professors</div>
+        <div class="ach-meta" style="color:var(--dim)">Computer Knowledge</div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+      <div class="links-row">
+        <a href="https://github.com/Ahilan-1"   target="_blank" rel="noopener">GitHub</a>
+        <a href="https://codeberg.org/ahilan"    target="_blank" rel="noopener">Codeberg</a>
+      </div>
+    </footer>
+
+  </div><!-- .page -->
+</div><!-- .tv-shell -->
+
+<script>
+/* ── DATE ── */
+(function(){
+  const d = new Date();
+  const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('date-out').textContent =
+    M[d.getMonth()].toUpperCase() + ' ' + String(d.getDate()).padStart(2,'0') + ', ' + d.getFullYear();
+})();
+
+/* ── TV TURN-ON SOUND (Web Audio, 40% volume) ── */
+(function(){
+  let fired = false;
+  function playTvOn() {
+    if (fired) return;
+    fired = true;
+
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const vol = ctx.createGain();
+      vol.gain.value = 0.40;
+      vol.connect(ctx.destination);
+
+      /* --- white-noise burst (static) --- */
+      const bufLen = ctx.sampleRate * 0.55;
+      const buf    = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+      const data   = buf.getChannelData(0);
+      for (let i = 0; i < bufLen; i++) data[i] = Math.random() * 2 - 1;
+
+      const noise = ctx.createBufferSource();
+      noise.buffer = buf;
+
+      /* shape: loud crack → fade */
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(1.4, ctx.currentTime);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
+
+      /* bandpass so it sounds more CRT than pure white */
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 3200;
+      bp.Q.value = 0.6;
+
+      noise.connect(bp);
+      bp.connect(noiseGain);
+      noiseGain.connect(vol);
+      noise.start();
+
+      /* --- low-freq thump (degauss / CRT hum) --- */
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(55, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(28, ctx.currentTime + 0.4);
+
+      const oscGain = ctx.createGain();
+      oscGain.gain.setValueAtTime(0.55, ctx.currentTime);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+
+      osc.connect(oscGain);
+      oscGain.connect(vol);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+
+      /* cleanup */
+      setTimeout(() => ctx.close(), 1200);
+    } catch(e) { /* AudioContext blocked — silent fail */ }
+  }
+
+  /* Fire on first user interaction OR immediately if context already allowed */
+  ['click','keydown','touchstart','scroll'].forEach(ev =>
+    window.addEventListener(ev, playTvOn, { once: true, passive: true })
+  );
+  /* Also try auto-play after a tiny delay (works in some browsers) */
+  setTimeout(playTvOn, 150);
+})();
+
+/* ── REMOVE BOOTING CLASS AFTER ANIMATION ── */
+setTimeout(() => document.getElementById('tvShell').classList.remove('booting'), 900);
+
+/* ── RANDOM PAGE GLITCH ── */
+(function(){
+  const shell = document.getElementById('tvShell');
+  let busy = false;
+  function tick() {
+    if (!busy && Math.random() > 0.92) {
+      busy = true;
+      const dx = (Math.random() - .5) * 4;
+      shell.style.transform = `translateX(${dx}px)`;
+      shell.style.filter    = `hue-rotate(${Math.random()*15}deg) brightness(1.05)`;
+      setTimeout(() => {
+        shell.style.transform = '';
+        shell.style.filter    = '';
+        busy = false;
+      }, 60 + Math.random() * 100);
+    }
+    setTimeout(tick, 900 + Math.random() * 3500);
+  }
+  tick();
+})();
+</script>
+</body>
+</html>
